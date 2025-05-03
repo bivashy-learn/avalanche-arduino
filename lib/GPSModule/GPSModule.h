@@ -34,6 +34,6 @@ private:
     unsigned long lastFixTime = 0;
     unsigned long lastWifiTry = 0;
     
-    const char* googleApiKey = "GOOGLE_API_KEY";
+    const char* googleApiKey = "AIzaSyDH8gONfTO4jlCe_iWY69PP8FjyK8OQp7Q";
     const char* ntpServer = "pool.ntp.org";
 }; 

@@ -19,7 +19,7 @@ int zoom = 14;
 double currentLongitude = centerLongitude;
 double currentLatitude = centerLatitude;
 unsigned long lastPositionChange = 0;
-const int POSITION_CHANGE_DELAY = 3000; // Delay in ms before changing position
+const int POSITION_CHANGE_DELAY = 120000; // Delay in ms before changing position
 
 // Joystick pins
 const int JOYSTICK_X_PIN = 9;
@@ -62,6 +62,7 @@ void updateMapCenter();
 void showLoadingText();
 void drawPositionMarker(LGFX_Sprite& sprite);
 void updateZoom();
+int newZoom();
 
 void setup() {
   Serial.begin(115200); 
@@ -91,7 +92,11 @@ void setup() {
   display.begin();
   display.setRotation(1);
   display.setBrightness(110);
-  gps.update();
+  bool updated = gps.hasFix() || gps.isUsingWifi();
+  while(!updated) {
+    gps.update();
+    updated = gps.hasFix() || gps.isUsingWifi();
+  }
   fetchNewMap();
 }
 
@@ -99,13 +104,13 @@ void loop() {
   // Update GPS
   gps.update();
   
+  updateZoom();
+  
   // Update map center if GPS has fix or using WiFi
   if (gps.hasFix() || gps.isUsingWifi()) {
     updateMapCenter();
   }
   
-  // Update zoom based on potentiometer
-  updateZoom();
   
   // Read joystick inputs
   int xValue = analogRead(JOYSTICK_X_PIN);
@@ -130,12 +135,10 @@ void loop() {
     positionChanged = true;
   }
 
+  updateStatusDisplay();
   if (positionChanged) {
     moveSprite();
   }
-
-  // Update status display
-  updateStatusDisplay();
 }
 
 void updateMapCenter() {
@@ -143,12 +146,12 @@ void updateMapCenter() {
   double newLng = gps.getLongitude();
   
   // Only update if position has changed significantly and enough time has passed
-  if ((abs(newLat - currentLatitude) > 0.0001 || abs(newLng - currentLongitude) > 0.0001) &&
-      millis() - lastPositionChange > POSITION_CHANGE_DELAY) {
+  bool shouldUpdatePosition = millis() - lastPositionChange > POSITION_CHANGE_DELAY || lastPositionChange == 0;
+  if ((abs(newLat - currentLatitude) > 0.01 || abs(newLng - currentLongitude) > 0.01) && shouldUpdatePosition) {
     currentLatitude = newLat;
     currentLongitude = newLng;
-    lastPositionChange = millis();
     fetchNewMap();
+    lastPositionChange = millis();
   }
 }
 
@@ -241,13 +244,20 @@ void updateStatusDisplay() {
     
     // Draw zoom level
     char zoomStr[15];
-    sprintf(zoomStr, "Zoom: %d", currentZoom);
+    sprintf(zoomStr, "Zoom: %d", newZoom());
     statusSprite.setTextSize(1);
     statusSprite.drawString(zoomStr, 5, 60);
     
     // Push to bottom left corner
     statusSprite.pushSprite(0, display.height() - 80);
     statusSprite.deleteSprite();
+}
+
+int newZoom() {
+  int potValue = analogRead(ZOOM_POT_PIN);
+  // Map potentiometer value (0-4095) to zoom range (MIN_ZOOM to MAX_ZOOM)
+  int newZoom = map(potValue, 0, 4095, MIN_ZOOM, MAX_ZOOM);
+  return newZoom;
 }
 
 void updateZoom() {
@@ -262,7 +272,7 @@ void updateZoom() {
     if (newZoom != lastZoom && millis() - lastZoomChange > ZOOM_CHANGE_DELAY) {
         zoom = newZoom;
         lastZoom = newZoom;
-        lastZoomChange = millis();
         fetchNewMap();
-    }
+        lastZoomChange = millis();
+      }
 }

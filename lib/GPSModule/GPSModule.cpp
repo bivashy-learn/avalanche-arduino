@@ -27,8 +27,8 @@ void GPSModule::update() {
 
     // If no GPS fix after 30 seconds, try WiFi location
     if (!hasGPSFix && (millis() - lastWifiTry > 60000 || lastWifiTry == 0)) {
-        lastWifiTry = millis();
         tryWifiLocation();
+        lastWifiTry = millis();
     }
 }
 
