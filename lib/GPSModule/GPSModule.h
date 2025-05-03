@@ -6,7 +6,9 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include <TimeLib.h>
-#include "../../include/config.h"
+#include "config.h"
+
+extern const char *GOOGLE_API_KEY;
 
 // Forward declaration
 class GPSModule {
@@ -35,5 +37,6 @@ private:
     unsigned long lastFixTime = 0;
     unsigned long lastWifiTry = 0;
     
+    const char *googleKey = GOOGLE_API_KEY;
     const char* ntpServer = "pool.ntp.org";
 }; 

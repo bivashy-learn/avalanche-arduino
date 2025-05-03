@@ -4,7 +4,7 @@
 #include <LovyanGFX.hpp>
 #include <OpenStreetMap-esp32.h>
 #include "GPSModule.h"
-#include "../include/config.h"
+#include "config.h"
 
 LGFX display;
 OpenStreetMap osm;

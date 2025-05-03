@@ -47,7 +47,7 @@ void GPSModule::tryWifiLocation() {
     client.setInsecure();
     
     HTTPClient http;
-    String url = "https://www.googleapis.com/geolocation/v1/geolocate?key=" + String(GOOGLE_API_KEY);
+    String url = String("https://www.googleapis.com/geolocation/v1/geolocate?key=") + googleKey;
     
     String jsonRequest = "{\"considerIp\":\"true\",\"wifiAccessPoints\":[";
     
