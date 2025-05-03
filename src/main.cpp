@@ -4,9 +4,7 @@
 #include <LovyanGFX.hpp>
 #include <OpenStreetMap-esp32.h>
 #include "GPSModule.h"
-
-const char *ssid = "WIW";
-const char *password = "WhateverIsWonderful";
+#include "../include/config.h"
 
 LGFX display;
 OpenStreetMap osm;
@@ -62,13 +60,12 @@ void updateMapCenter();
 void showLoadingText();
 void drawPositionMarker(LGFX_Sprite& sprite);
 void updateZoom();
-int newZoom();
 
 void setup() {
   Serial.begin(115200); 
   
   log_e("Total PSRAM: %d bytes", ESP.getPsramSize());
-  log_e("WiFi connecting to %s", ssid);
+  log_e("WiFi connecting to %s", WIFI_SSID);
 
   // Initialize input pins
   analogSetAttenuation(ADC_11db);
@@ -77,7 +74,7 @@ void setup() {
   osm.resizeTilesCache(cacheSize);
   osm.setResolution(mapWidth, mapHeight);
 
-  WiFi.begin(ssid, password);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   while (WiFi.status() != WL_CONNECTED) {
     delay(10);
     log_e(".");
@@ -94,7 +91,7 @@ void setup() {
   display.setBrightness(110);
   bool updated = gps.hasFix() || gps.isUsingWifi();
   while(!updated) {
-    gps.update();
+  gps.update();
     updated = gps.hasFix() || gps.isUsingWifi();
   }
   fetchNewMap();
@@ -102,7 +99,7 @@ void setup() {
 
 void loop() {
   // Update GPS
-  gps.update();
+    gps.update();
   
   updateZoom();
   
@@ -111,7 +108,7 @@ void loop() {
     updateMapCenter();
   }
   
-  
+    
   // Read joystick inputs
   int xValue = analogRead(JOYSTICK_X_PIN);
   int yValue = analogRead(JOYSTICK_Y_PIN);
@@ -136,23 +133,24 @@ void loop() {
   }
 
   updateStatusDisplay();
+
   if (positionChanged) {
     moveSprite();
   }
 }
 
 void updateMapCenter() {
-  double newLat = gps.getLatitude();
-  double newLng = gps.getLongitude();
-  
-  // Only update if position has changed significantly and enough time has passed
+    double newLat = gps.getLatitude();
+    double newLng = gps.getLongitude();
+    
+    // Only update if position has changed significantly and enough time has passed
   bool shouldUpdatePosition = millis() - lastPositionChange > POSITION_CHANGE_DELAY || lastPositionChange == 0;
   if ((abs(newLat - currentLatitude) > 0.01 || abs(newLng - currentLongitude) > 0.01) && shouldUpdatePosition) {
-    currentLatitude = newLat;
-    currentLongitude = newLng;
-    fetchNewMap();
-    lastPositionChange = millis();
-  }
+        currentLatitude = newLat;
+        currentLongitude = newLng;
+        lastPositionChange = millis();
+        fetchNewMap();
+    }
 }
 
 void showLoadingText() {
@@ -244,20 +242,12 @@ void updateStatusDisplay() {
     
     // Draw zoom level
     char zoomStr[15];
-    sprintf(zoomStr, "Zoom: %d", newZoom());
-    statusSprite.setTextSize(1);
+    sprintf(zoomStr, "Zoom: %d", currentZoom);
     statusSprite.drawString(zoomStr, 5, 60);
     
     // Push to bottom left corner
     statusSprite.pushSprite(0, display.height() - 80);
     statusSprite.deleteSprite();
-}
-
-int newZoom() {
-  int potValue = analogRead(ZOOM_POT_PIN);
-  // Map potentiometer value (0-4095) to zoom range (MIN_ZOOM to MAX_ZOOM)
-  int newZoom = map(potValue, 0, 4095, MIN_ZOOM, MAX_ZOOM);
-  return newZoom;
 }
 
 void updateZoom() {
@@ -272,7 +262,7 @@ void updateZoom() {
     if (newZoom != lastZoom && millis() - lastZoomChange > ZOOM_CHANGE_DELAY) {
         zoom = newZoom;
         lastZoom = newZoom;
-        fetchNewMap();
         lastZoomChange = millis();
-      }
+        fetchNewMap();
+    }
 }
